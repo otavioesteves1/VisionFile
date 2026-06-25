@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data: file:; style-src 'self' 'unsafe-inline';" />
+  <title>VisionFile</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="notif" id="notif">
+    <div class="notif__accent"></div>
+    <div class="notif__body">
+      <div class="notif__top" id="notifTop">
+        <img class="notif__icon" src="../../assets/icone.png" alt="" id="notifIcon" />
+        <span class="notif__title" id="notifTitle"></span>
+      </div>
+      <div class="notif__msg" id="notifMsg"></div>
+      <div class="notif__actions">
+        <button class="btn-primary" id="btnView">Visualizar</button>
+        <button class="btn-ghost"   id="btnClose">Fechar</button>
+      </div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

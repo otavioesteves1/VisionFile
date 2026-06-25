@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+*.log.old
+visionfile_snap.json
+visionfile_config.json
+visionfile_novos.txt
+visionfile.ico

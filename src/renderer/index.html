@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data: file:; style-src 'self' 'unsafe-inline';" />
+  <title>VisionFile</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Titlebar ── -->
+  <div class="titlebar">
+    <div class="titlebar__left">
+      <img class="titlebar__icon" src="../../assets/icone.png" alt="" id="titlebarIcon" />
+      <div class="titlebar__text">
+        <span class="titlebar__name">VisionFile</span>
+        <span class="titlebar__eyebrow">MONITOR DE ARQUIVOS</span>
+      </div>
+    </div>
+    <div class="titlebar__status">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-label" id="statusLabel">Iniciando...</span>
+    </div>
+    <div class="titlebar__controls">
+      <button class="ctrl-btn" id="btnMinimize" title="Minimizar">&#x2013;</button>
+      <button class="ctrl-btn ctrl-btn--close" id="btnClose" title="Ocultar para bandeja">&#x2715;</button>
+    </div>
+  </div>
+
+  <!-- ── Tabs ── -->
+  <div class="tabs">
+    <button class="tab tab--active" data-tab="files" id="tabFiles">Arquivos</button>
+    <button class="tab" data-tab="config" id="tabConfig">Configurações</button>
+  </div>
+
+  <!-- ── Panel: Arquivos ── -->
+  <div class="tab-panel" id="panelFiles">
+    <div class="cards-scroll" id="cardsScroll">
+      <div class="cards-list" id="cardsList"></div>
+    </div>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-state__icon">○</div>
+      <div class="empty-state__title">Nenhuma alteração detectada</div>
+      <div class="empty-state__sub">monitorando pastas em segundo plano</div>
+    </div>
+  </div>
+
+  <!-- ── Panel: Configurações ── -->
+  <div class="tab-panel tab-panel--hidden" id="panelConfig">
+    <div class="config-scroll">
+
+      <section class="config-section">
+        <div class="section-label">Pastas monitoradas</div>
+        <div class="folder-list" id="folderList"></div>
+        <button class="btn btn--ghost btn--sm" id="btnAddFolder" style="margin-top:10px">+ Adicionar pasta</button>
+      </section>
+
+      <div class="config-divider"></div>
+
+      <section class="config-section">
+        <div class="section-label">Intervalo de verificação</div>
+        <div class="radio-row">
+          <label class="radio-label">
+            <input type="radio" name="modo" value="intervalo" id="modoIntervalo" />
+            <span>A cada</span>
+          </label>
+          <input type="number" id="intervalMin" min="1" max="1440" class="num-input" value="5" />
+          <span class="unit-label">minuto(s)</span>
+        </div>
+        <div class="radio-row">
+          <label class="radio-label">
+            <input type="radio" name="modo" value="diario" id="modoDiario" />
+            <span>Todo dia às</span>
+          </label>
+          <input type="number" id="horaCheck" min="0" max="23" class="num-input" value="8" />
+          <span class="unit-label">:00</span>
+        </div>
+      </section>
+
+      <div class="config-actions">
+        <button class="btn btn--ghost" id="btnCheckNow">Verificar agora</button>
+        <button class="btn btn--primary" id="btnApply">Aplicar</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="footer">
+    <span class="footer__info" id="footerInfo">Monitorando...</span>
+    <div class="footer__actions">
+      <button class="btn btn--ghost btn--sm" id="btnClearSel" disabled>Visualizar selecionados</button>
+      <button class="btn btn--primary btn--sm" id="btnClearAll" disabled>Visualizar todos</button>
+    </div>
+  </div>
+
+  <!-- ── Modal: editar/adicionar pasta ── -->
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal" id="editModal">
+    <div class="modal__header">Editar pasta</div>
+    <div class="modal__body">
+      <label class="modal__label">Apelido <span style="opacity:.5">(opcional)</span></label>
+      <input type="text" id="editAlias" class="modal__input" placeholder="Ex: Projetos" />
+      <label class="modal__label" style="margin-top:12px">Caminho da pasta</label>
+      <div class="modal__path-row">
+        <input type="text" id="editPath" class="modal__input" />
+        <button class="btn btn--ghost btn--sm" id="btnBrowse">...</button>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" id="btnModalCancel">Cancelar</button>
+      <button class="btn btn--primary" id="btnModalSave">Salvar</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

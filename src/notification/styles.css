@@ -1,0 +1,127 @@
+:root {
+  --bg:      #161b22;
+  --surface: #1c2128;
+  --text:    #e6edf3;
+  --subtext: #7d8590;
+  --sep:     #21262d;
+  --cyan:    #22d3ee;
+  --cyan-h:  #06b6d4;
+  --btn-bg:  #21262d;
+  --btn-hv:  #30363d;
+
+  font-family: "Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  font-size: 13px;
+  color: var(--text);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 360px;
+  height: 120px;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  cursor: default;
+}
+
+/* Whole card animates in from below */
+.notif {
+  display: flex;
+  width: 360px;
+  height: 120px;
+  background: var(--bg);
+  border: 1px solid var(--sep);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.70), 0 4px 12px rgba(0,0,0,0.50);
+  animation: notif-in 340ms cubic-bezier(0.16,1,0.3,1) both;
+  -webkit-app-region: drag;
+}
+
+@keyframes notif-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Left cyan accent bar */
+.notif__accent {
+  width: 4px;
+  background: var(--cyan);
+  flex-shrink: 0;
+}
+
+.notif__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 14px;
+  min-width: 0;
+}
+
+/* Header row: icon + title */
+.notif__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif__icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.notif__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Message line */
+.notif__msg {
+  font-size: 11px;
+  color: var(--subtext);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 26px;   /* align with title text (icon 18 + gap 8) */
+}
+
+/* Action buttons */
+.notif__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  -webkit-app-region: no-drag;
+}
+
+.btn-primary,
+.btn-ghost {
+  font: inherit;
+  font-size: 11px;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background 100ms;
+  -webkit-app-region: no-drag;
+}
+
+.btn-primary {
+  background: var(--cyan);
+  color: #001014;
+  font-weight: 600;
+}
+.btn-primary:hover { background: var(--cyan-h); }
+
+.btn-ghost {
+  background: var(--btn-bg);
+  color: var(--text);
+}
+.btn-ghost:hover { background: var(--btn-hv); }
