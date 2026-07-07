@@ -122,12 +122,30 @@ function onFileEvent({ tipo, caminho, antigo }) {
   syncEmpty(); updateTabLabel(); updateFooter();
 }
 
+function findAlias(filePath) {
+  const pastas = [...(config.pastas || [])];
+  // ordena do mais específico (caminho mais longo) para o mais geral
+  pastas.sort((a, b) => {
+    const pa = (typeof a === 'string' ? a : a.caminho) || '';
+    const pb = (typeof b === 'string' ? b : b.caminho) || '';
+    return pb.length - pa.length;
+  });
+  const norm = p => String(p).replace(/\//g, '\\').toLowerCase();
+  for (const p of pastas) {
+    const dir   = typeof p === 'string' ? p : (p.caminho || '');
+    const alias = typeof p === 'object' ? (p.apelido || '') : '';
+    if (norm(filePath).startsWith(norm(dir))) return alias;
+  }
+  return '';
+}
+
 function buildCard({ tipo, caminho, antigo }) {
   const LABELS = { novo: 'Novo', modificado: 'Modificado', renomeado: 'Renomeado', excluido: 'Excluído' };
   const dir    = parentDir(caminho);
   const name   = antigo
     ? `${baseName(antigo)}  →  ${baseName(caminho)}`
     : baseName(caminho);
+  const alias  = findAlias(caminho);
 
   const el = mk('div', `card card--${tipo}`);
 
@@ -154,8 +172,17 @@ function buildCard({ tipo, caminho, antigo }) {
   top.appendChild(badge);
   body.appendChild(top);
 
+  // Linha do caminho: "APELIDO  ·  C:\...\pasta" ou só o path se sem apelido
   const pathEl = mk('div', 'card__path');
-  pathEl.textContent = abbreviate(dir);
+  if (alias) {
+    const tagEl = mk('span', 'card__alias');
+    tagEl.textContent = alias;
+    pathEl.appendChild(tagEl);
+    const sep = document.createTextNode(`  ·  ${abbreviate(dir)}`);
+    pathEl.appendChild(sep);
+  } else {
+    pathEl.textContent = abbreviate(dir);
+  }
   pathEl.title = dir;
   pathEl.addEventListener('click', () => window.api.openPath(dir));
   body.appendChild(pathEl);

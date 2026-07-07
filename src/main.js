@@ -7,14 +7,29 @@ const path = require('path');
 const fs   = require('fs');
 
 // ── Paths ──────────────────────────────────────────────────────
-const APP_DIR = app.isPackaged
-  ? path.dirname(process.execPath)
-  : path.join(__dirname, '..');
+// DATA_DIR fica em %APPDATA%\VisionFile — persiste entre versões/atualizações
+const DATA_DIR    = app.getPath('userData');
+const APP_DIR     = app.isPackaged ? path.dirname(process.execPath) : path.join(__dirname, '..');
+const ICON_PATH   = path.join(APP_DIR, 'assets', 'icone.png');
 
-const CONFIG_PATH   = path.join(APP_DIR, 'visionfile_config.json');
-const SNAPSHOT_PATH = path.join(APP_DIR, 'visionfile_snap.json');
-const LOG_PATH      = path.join(APP_DIR, 'visionfile.log');
-const ICON_PATH     = path.join(APP_DIR, 'assets', 'icone.png');
+// Garante que o diretório de dados existe
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const CONFIG_PATH   = path.join(DATA_DIR, 'visionfile_config.json');
+const SNAPSHOT_PATH = path.join(DATA_DIR, 'visionfile_snap.json');
+const LOG_PATH      = path.join(DATA_DIR, 'visionfile.log');
+
+// Migração única: se havia config na pasta do exe, copia para DATA_DIR
+function migrateOldData() {
+  const legados = ['visionfile_config.json', 'visionfile_snap.json'];
+  for (const nome of legados) {
+    const origem  = path.join(APP_DIR, nome);
+    const destino = path.join(DATA_DIR, nome);
+    if (fs.existsSync(origem) && !fs.existsSync(destino)) {
+      try { fs.copyFileSync(origem, destino); } catch {}
+    }
+  }
+}
 
 const CONFIG_DEFAULT = {
   pastas: [], intervalo_min: 5, modo: 'intervalo', hora_check: 8, extensoes: [],
@@ -283,11 +298,14 @@ function createTray() {
   tray = new Tray(cleanIcon);
   tray.setToolTip('VisionFile');
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Abrir VisionFile', click: () => { win.show(); win.focus(); } },
+    { label: 'Abrir VisionFile',           click: () => { win.show(); win.focus(); } },
     { type: 'separator' },
-    { label: 'Verificar agora', click: () => { doCheck(); scheduleNext(); } },
+    { label: 'Verificar agora',            click: () => { doCheck(); scheduleNext(); } },
     { type: 'separator' },
-    { label: 'Sair', click: () => { isQuitting = true; app.quit(); } },
+    { label: 'Editar configurações (JSON)',click: () => shell.openPath(CONFIG_PATH) },
+    { label: 'Abrir pasta de dados',       click: () => shell.openPath(DATA_DIR) },
+    { type: 'separator' },
+    { label: 'Sair',                       click: () => { isQuitting = true; app.quit(); } },
   ]));
   tray.on('click', () => { win.show(); win.focus(); });
 }
@@ -329,7 +347,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => { win?.show(); win?.focus(); });
-  app.whenReady().then(() => { createWindow(); createTray(); registerIPC(); });
+  app.whenReady().then(() => { migrateOldData(); createWindow(); createTray(); registerIPC(); });
   app.on('before-quit',       () => { isQuitting = true; });
   app.on('window-all-closed', () => { /* manter vivo no tray */ });
 }

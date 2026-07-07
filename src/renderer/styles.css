@@ -317,6 +317,12 @@ body {
 }
 .card__path:hover { color: var(--cyan); }
 
+.card__alias {
+  font-weight: 600;
+  color: var(--cyan);
+  letter-spacing: 0.03em;
+}
+
 /* Card colour variants */
 .card--novo      .card__bar    { background: var(--green); }
 .card--novo      .card__badge  { background: var(--green-dim); color: var(--green); }
