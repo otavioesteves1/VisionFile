@@ -1,6 +1,6 @@
 {
   "name": "visionfile",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "description": "VisionFile — Monitor de arquivos em tempo real",
   "main": "src/main.js",
   "scripts": {

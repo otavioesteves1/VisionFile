@@ -49,9 +49,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') closeModal();
   });
 
+  // Localização do arquivo de configuração
+  loadConfigPathDisplay();
+  document.getElementById('btnOpenConfigDir').addEventListener('click', async () => {
+    const p = document.getElementById('configPathText').dataset.path;
+    if (p) window.api.openPath(dirOf(p));
+  });
+  document.getElementById('btnChangeConfigPath').addEventListener('click', changeConfigPath);
+
   // Gera ícone de badge para o tray (base icon + red dot via canvas)
   generateBadgeIcon();
 });
+
+// ── Config path (localização portátil) ────────────────────────
+async function loadConfigPathDisplay() {
+  const p = await window.api.getConfigPath();
+  const el = document.getElementById('configPathText');
+  el.textContent = p;
+  el.dataset.path = p;
+  el.title = p;
+}
+
+async function changeConfigPath() {
+  const newPath = await window.api.pickConfigFile();
+  if (!newPath) return;
+  const result = await window.api.setConfigPath(newPath);
+  if (!result.ok) { alert('Erro ao alterar localização:\n' + result.error); return; }
+  config = result.config;
+  const el = document.getElementById('configPathText');
+  el.textContent = newPath;
+  el.dataset.path = newPath;
+  el.title = newPath;
+  renderFolderList();
+  loadConfigForm();
+}
+
+function dirOf(p) {
+  return String(p).replace(/[\\\/][^\\\/]*$/, '') || p;
+}
 
 // ── Badge icon (tray) ──────────────────────────────────────────
 function generateBadgeIcon() {
@@ -360,10 +395,16 @@ function parentDir(p) {
   return parts.join('\\') || p;
 }
 
-function abbreviate(p, max = 55) {
-  if (!p || p.length <= max) return p;
-  const parts = String(p).replace(/\\/g, '/').split('/').filter(Boolean);
-  if (parts.length <= 2) return '…' + p.slice(-(max - 1));
-  const c = `${parts[0]}\\…\\${parts[parts.length - 1]}`;
-  return c.length <= max ? c : '…' + p.slice(-(max - 1));
+function abbreviate(p, maxLen = 70) {
+  if (!p || p.length <= maxLen) return p;
+  const sep   = '\\';
+  const parts = String(p).replace(/\//g, sep).split(sep).filter(Boolean);
+  // Com 4 partes ou menos não há muito a abreviar (ex: C:\a\b\c)
+  if (parts.length <= 4) return p;
+  // Mantém drive + últimas 3 pastas: C:\…\pasta1\pasta2\pasta3
+  const tail  = parts.slice(-3).join(sep);
+  const short = `${parts[0]}${sep}…${sep}${tail}`;
+  if (short.length <= maxLen) return short;
+  // Ainda longo — cai para últimas 2
+  return `${parts[0]}${sep}…${sep}${parts.slice(-2).join(sep)}`;
 }

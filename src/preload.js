@@ -3,9 +3,12 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   // Config
-  getConfig:    ()      => ipcRenderer.invoke('config:get'),
-  saveConfig:   (cfg)   => ipcRenderer.invoke('config:save', cfg),
-  pickFolder:   ()      => ipcRenderer.invoke('config:pick-folder'),
+  getConfig:      ()      => ipcRenderer.invoke('config:get'),
+  saveConfig:     (cfg)   => ipcRenderer.invoke('config:save', cfg),
+  pickFolder:     ()      => ipcRenderer.invoke('config:pick-folder'),
+  getConfigPath:  ()      => ipcRenderer.invoke('config:get-path'),
+  setConfigPath:  (p)     => ipcRenderer.invoke('config:set-path', p),
+  pickConfigFile: ()      => ipcRenderer.invoke('config:pick-file'),
 
   // Actions
   checkNow:     ()      => ipcRenderer.invoke('check:now'),

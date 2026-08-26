@@ -484,6 +484,37 @@ body {
   border-top: 1px solid var(--sep);
 }
 
+/* ── Config path (localização portátil) ──────────────────── */
+.config-path-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--sep);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.config-path-text {
+  flex: 1;
+  font-size: 11px;
+  color: var(--subtext);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: "Cascadia Code","Consolas",monospace;
+}
+.config-path-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.config-path-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 /* ── Buttons ──────────────────────────────────────────────── */
 .btn {
   font: inherit;

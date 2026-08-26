@@ -15,7 +15,8 @@ const ICON_PATH   = path.join(APP_DIR, 'assets', 'icone.png');
 // Garante que o diretório de dados existe
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const CONFIG_PATH   = path.join(DATA_DIR, 'visionfile_config.json');
+const CONFIG_PATH   = path.join(DATA_DIR, 'visionfile_config.json'); // localização padrão
+const META_PATH     = path.join(DATA_DIR, 'meta.json');             // aponta para config real
 const SNAPSHOT_PATH = path.join(DATA_DIR, 'visionfile_snap.json');
 const LOG_PATH      = path.join(DATA_DIR, 'visionfile.log');
 
@@ -29,6 +30,19 @@ function migrateOldData() {
       try { fs.copyFileSync(origem, destino); } catch {}
     }
   }
+}
+
+// ── Meta (aponta para onde o arquivo de config realmente está) ──
+function loadMeta() {
+  if (!fs.existsSync(META_PATH)) return {};
+  try { return JSON.parse(fs.readFileSync(META_PATH, 'utf8')); } catch { return {}; }
+}
+function saveMeta(m) {
+  fs.writeFileSync(META_PATH, JSON.stringify(m, null, 2), 'utf8');
+}
+function getConfigPath() {
+  const m = loadMeta();
+  return m.configPath || CONFIG_PATH;
 }
 
 const CONFIG_DEFAULT = {
@@ -45,9 +59,10 @@ let badgeIcon  = null;
 
 // ── Config ────────────────────────────────────────────────────
 function loadConfig() {
-  if (!fs.existsSync(CONFIG_PATH)) return { ...CONFIG_DEFAULT };
+  const cfgPath = getConfigPath();
+  if (!fs.existsSync(cfgPath)) return { ...CONFIG_DEFAULT };
   try {
-    const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
     if (Array.isArray(cfg.pastas))
       cfg.pastas = cfg.pastas.map(p => typeof p === 'string' ? { caminho: p, apelido: '' } : p);
     return { ...CONFIG_DEFAULT, ...cfg };
@@ -55,7 +70,10 @@ function loadConfig() {
 }
 
 function saveConfig(cfg) {
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
+  const cfgPath = getConfigPath();
+  const dir = path.dirname(cfgPath);
+  if (!fs.existsSync(dir)) try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+  fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2), 'utf8');
 }
 
 // ── Log (com rotação em 2 MB) ─────────────────────────────────
@@ -302,7 +320,7 @@ function createTray() {
     { type: 'separator' },
     { label: 'Verificar agora',            click: () => { doCheck(); scheduleNext(); } },
     { type: 'separator' },
-    { label: 'Editar configurações (JSON)',click: () => shell.openPath(CONFIG_PATH) },
+    { label: 'Editar configurações (JSON)',click: () => shell.openPath(getConfigPath()) },
     { label: 'Abrir pasta de dados',       click: () => shell.openPath(DATA_DIR) },
     { type: 'separator' },
     { label: 'Sair',                       click: () => { isQuitting = true; app.quit(); } },
@@ -332,6 +350,39 @@ function registerIPC() {
   // Renderer informa contagem atual para atualizar ícone do tray
   ipcMain.on('tray:count', (_, n) => updateTrayIcon(n));
 
+  // Localização portátil do arquivo de configuração
+  ipcMain.handle('config:get-path', () => getConfigPath());
+
+  ipcMain.handle('config:set-path', async (_, newPath) => {
+    try {
+      const oldPath = getConfigPath();
+      if (!fs.existsSync(newPath)) {
+        const dir = path.dirname(newPath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        if (fs.existsSync(oldPath)) fs.copyFileSync(oldPath, newPath);
+        else fs.writeFileSync(newPath, JSON.stringify({ ...CONFIG_DEFAULT }, null, 2), 'utf8');
+      }
+      const meta = loadMeta();
+      meta.configPath = newPath;
+      saveMeta(meta);
+      scheduleNext();
+      return { ok: true, config: loadConfig(), path: newPath };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('config:pick-file', async () => {
+    const meta = loadMeta();
+    const def  = meta.configPath || path.join(app.getPath('home'), 'visionfile_config.json');
+    const r = await dialog.showSaveDialog(win, {
+      title: 'Escolher local para o arquivo de configuração',
+      defaultPath: def,
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+    return r.canceled ? null : r.filePath;
+  });
+
   // Popup de notificação
   ipcMain.on('notif:view', () => {
     if (notifWin && !notifWin.isDestroyed()) { notifWin.close(); notifWin = null; }
@@ -342,12 +393,58 @@ function registerIPC() {
   });
 }
 
+// ── Primeiro uso: escolher onde salvar o config ───────────────
+async function firstRunSetup() {
+  if (fs.existsSync(META_PATH)) return; // já configurado antes
+
+  const { response } = await dialog.showMessageBox({
+    type: 'question',
+    title: 'VisionFile — Configuração inicial',
+    message: 'Onde deseja salvar o arquivo de configuração?',
+    detail:
+      'Escolha "OneDrive / Personalizado" para sincronizar entre computadores.\n' +
+      'Escolha "Localização padrão" para usar a pasta de dados local.',
+    buttons: ['Localização padrão', 'OneDrive / Personalizado'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true,
+  });
+
+  let cfgPath = CONFIG_PATH;
+
+  if (response === 1) {
+    const r = await dialog.showSaveDialog({
+      title: 'Escolher onde salvar o arquivo de configuração',
+      defaultPath: path.join(app.getPath('home'), 'visionfile_config.json'),
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+    if (!r.canceled && r.filePath) cfgPath = r.filePath;
+  }
+
+  // Se o usuário escolheu outro local e o config padrão existe, copia para lá
+  if (cfgPath !== CONFIG_PATH && !fs.existsSync(cfgPath) && fs.existsSync(CONFIG_PATH)) {
+    try {
+      const dir = path.dirname(cfgPath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.copyFileSync(CONFIG_PATH, cfgPath);
+    } catch {}
+  }
+
+  saveMeta({ configPath: cfgPath });
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => { win?.show(); win?.focus(); });
-  app.whenReady().then(() => { migrateOldData(); createWindow(); createTray(); registerIPC(); });
+  app.whenReady().then(async () => {
+    migrateOldData();
+    await firstRunSetup();
+    createWindow();
+    createTray();
+    registerIPC();
+  });
   app.on('before-quit',       () => { isQuitting = true; });
   app.on('window-all-closed', () => { /* manter vivo no tray */ });
 }
