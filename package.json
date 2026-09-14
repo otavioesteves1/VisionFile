@@ -5,7 +5,9 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win portable"
+    "build": "electron-builder --win",
+    "build:installer": "electron-builder --win nsis",
+    "build:portable": "electron-builder --win portable"
   },
   "author": "Otavio",
   "license": "MIT",
@@ -17,9 +19,28 @@
     "appId": "com.otavio.visionfile",
     "productName": "VisionFile",
     "directories": { "output": "dist" },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
     "win": {
       "icon": "assets/icone.png",
-      "target": [{ "target": "portable", "arch": ["x64"] }]
+      "target": [
+        { "target": "nsis",     "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VisionFile"
+    },
+    "portable": {
+      "artifactName": "VisionFile-${version}-portable.exe"
     }
   }
 }
